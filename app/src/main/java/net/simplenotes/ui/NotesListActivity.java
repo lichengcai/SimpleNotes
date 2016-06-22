@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 
 import net.simplenotes.R;
+import net.simplenotes.tool.ToastUtils;
 
 /**
  * Created by lichengcai on 2016/6/20.
@@ -17,6 +18,7 @@ public class NotesListActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes_list);
         Button button = (Button) findViewById(R.id.btn_new_note);
+        ToastUtils.showToast("eee");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

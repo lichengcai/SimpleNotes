@@ -77,4 +77,16 @@ public class Notes {
         public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/call_note";
         public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/call_note");
     }
+
+    /**
+     * Mode to indicate the text in check list mode or not
+     * <P> Type:Integer 1: check list mode  0: normal mode </P>
+     */
+    public static final class TextNote implements DataColumns {
+        public static final String MODE = DATA1;
+        public static final int MODE_CHECK_LIST = 1;
+        public static final String CONTENT_TYPE = "vnd.android.cursor.dir/text_note";
+        public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/text_note";
+        public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/text_note");
+    }
 }

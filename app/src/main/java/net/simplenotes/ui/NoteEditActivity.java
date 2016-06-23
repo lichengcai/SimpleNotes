@@ -6,10 +6,13 @@ import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -87,7 +90,7 @@ public class NoteEditActivity extends Activity implements View.OnClickListener,
     private WorkingNote mWorkingNote;
 
     private SharedPreferences mSharedPreferences;
-    private int mFontSized;
+    private int mFontSizeId;
     private static final String PREFERENCE_FONT_SIZE = "pref_font_size";
     private static final int SHORTCUT_ICON_TITLE_MAX_LEN = 10;
     public static final String TAG_CHECKED = String.valueOf('\u221A');
@@ -100,9 +103,84 @@ public class NoteEditActivity extends Activity implements View.OnClickListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note_edit);
+        String action = getIntent().getAction();
+        boolean equals = TextUtils.equals(Intent.ACTION_INSERT_OR_EDIT,getIntent().getAction());
+        LogUtils.d("action:---" + action + "   equals:---" + equals);
         Log.d(TAG,"savedInstanceState:---" + savedInstanceState);
+        if (savedInstanceState == null && !initActivityState(getIntent())) {
+            finish();
+            return;
+        }
+        initResources();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initNoteScreen();
+    }
+
+    private void initNoteScreen() {
+        mNoteEditor.setTextAppearance(this, ResourceParser.TextAppearanceResources.getTextAppearanceResource(mFontSizeId));
+        if (mWorkingNote.getCheckListMode() == Notes.TextNote.MODE_CHECK_LIST) {
+
+        }else {
+//            mNoteEditor.setText();
+        }
+
+        mHeadViewPanel.setBackgroundResource(mWorkingNote.getTitleBgResId());
+        mNoteEditorPanel.setBackgroundResource(mWorkingNote.getBgColorResId());
+        mNoteHeadViewHolder.tvModified.setText(DateUtils.formatDateTime(this, mWorkingNote.getModifiedDate(), DateUtils.FORMAT_SHOW_DATE
+                | DateUtils.FORMAT_NUMERIC_DATE | DateUtils.FORMAT_SHOW_TIME
+                | DateUtils.FORMAT_SHOW_YEAR));
+    }
+    private void initResources(){
+        mHeadViewPanel = findViewById(R.id.note_title);
+        mNoteHeadViewHolder = new HeadViewHolder();
+        mNoteHeadViewHolder.tvModified = (TextView) findViewById(R.id.tv_modified_date);
+        mNoteHeadViewHolder.tvAlertIcon = (ImageView) findViewById(R.id.iv_alert_icon);
+        mNoteHeadViewHolder.tvAlertDate = (TextView) findViewById(R.id.tv_alert_date);
+        mNoteHeadViewHolder.ibSetBgColor = (ImageView) findViewById(R.id.btn_set_bg_color);
+        mNoteHeadViewHolder.ibSetBgColor.setOnClickListener(this);
+
+        mNoteEditor = (EditText) findViewById(R.id.note_edit_view);
+        mNoteEditorPanel = findViewById(R.id.sv_note_edit);
+
+        mNoteBgColorSelector = findViewById(R.id.note_bg_color_selector);
+        for (int id : sBgSelectorBtnsMap.keySet()) {
+            ImageView iv = (ImageView) findViewById(id);
+            iv.setOnClickListener(this);
+        }
+
+        mFontSizeSelector = findViewById(R.id.font_size_selector);
+        for (int id : sFontSizeBtnsMap.keySet()) {
+            View view = findViewById(id);
+            view.setOnClickListener(this);
+        }
+
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mFontSizeId = mSharedPreferences.getInt(PREFERENCE_FONT_SIZE,ResourceParser.BG_DEFAULT_FONT_SIZE);
+
+        if (mFontSizeId >= ResourceParser.TextAppearanceResources.getResourcesSize()) {
+            mFontSizeId = ResourceParser.BG_DEFAULT_FONT_SIZE;
+        }
+        mEditTextList = (LinearLayout) findViewById(R.id.note_edit_list);
+
+    }
+
+    private boolean saveNote() {
+        getWorkingText();
+        boolean saved = false;
+        if (saved) {
+            setResult(RESULT_OK);
+        }
+        return saved;
+    }
+
+    /**
+     * If the user specified the {@link Intent#ACTION_VIEW} but not provided with id,
+     * then jump to the NotesListActivity
+     */
     private boolean initActivityState(Intent intent) {
         mWorkingNote = null;
         if (TextUtils.equals(Intent.ACTION_VIEW,intent.getAction())) {
@@ -168,13 +246,62 @@ public class NoteEditActivity extends Activity implements View.OnClickListener,
             return false;
         }
         mWorkingNote.setOnSettingStatusChangedListener(this);
-        return false;
+        return true;
+    }
+
+    private boolean getWorkingText() {
+        boolean hasChecked = false;
+        if (mWorkingNote.getCheckListMode() == Notes.TextNote.MODE_CHECK_LIST) {
+            StringBuffer stringBuffer = new StringBuffer();
+            for (int i=0; i<mEditTextList.getChildCount(); i++) {
+                View view = mEditTextList.getChildAt(i);
+                NoteEditText editText = (NoteEditText) view.findViewById(R.id.et_edit_text);
+                if (!TextUtils.isEmpty(editText.getText())) {
+                    if (((CheckBox)view.findViewById(R.id.cb_edit_item)).isChecked()) {
+                        stringBuffer.append(TAG_CHECKED).append(" ").append(editText.getText().append("/n"));
+                        hasChecked = true;
+                    }else {
+                        stringBuffer.append(TAG_UNCHECKE).append(" ").append(editText.getText().append("/n"));
+                    }
+                }
+            }
+        }else {
+
+        }
+        return hasChecked;
     }
     @Override
     public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_new_note:
+
+                break;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (clearSettingState()) {
+            return;
+        }
+        super.onBackPressed();
 
     }
 
+    /**
+     * hide the NoteBgColorSelector or FontSizeSelector
+     * @return
+     */
+    private boolean clearSettingState() {
+        if (mNoteBgColorSelector.getVisibility() == View.VISIBLE) {
+            mNoteBgColorSelector.setVisibility(View.GONE);
+            return true;
+        }else if (mFontSizeSelector.getVisibility() == View.VISIBLE) {
+            mFontSizeSelector.setVisibility(View.GONE);
+            return true;
+        }
+        return false;
+    }
     @Override
     public void onEditTextDelete(int index, String text) {
 

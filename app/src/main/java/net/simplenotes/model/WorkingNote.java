@@ -3,9 +3,11 @@ package net.simplenotes.model;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.text.TextUtils;
 import android.util.Log;
 
 import net.simplenotes.data.Notes;
+import net.simplenotes.tool.ResourceParser;
 
 /**
  * Created by lichengcai on 2016/6/20.
@@ -171,6 +173,17 @@ public class WorkingNote {
         loadNote();
     }
 
+    public synchronized boolean saveNote() {
+        if (mIsDeleted || (!existInDatabase() && TextUtils.isEmpty(mContent))
+                || (existInDatabase() && )) {
+
+        }
+        return false;
+    }
+
+    public boolean existInDatabase() {
+        return mNoteId > 0;
+    }
     public static WorkingNote load(Context context,long id) {
         return new WorkingNote(context,id);
     }
@@ -211,8 +224,23 @@ public class WorkingNote {
 
     }
 
+    public int getCheckListMode() {
+        return mMode;
+    }
+    public int getBgColorResId() {
+        return ResourceParser.NoteBgResources.getNoteBgResource(mBgColorId);
+    }
 
+    public int getBgColorId() {
+        return mBgColorId;
+    }
 
+    public int getTitleBgResId() {
+        return ResourceParser.NoteBgResources.getNoteTitleBgResource(mBgColorId);
+    }
+    public long getModifiedDate() {
+        return mModifiedDate;
+    }
     public interface NoteSettingChangedListener {
         void onBackgroundColorChanged();
         void onClockAlertChanged(long date,boolean set);
